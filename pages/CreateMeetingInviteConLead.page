@@ -1,0 +1,54 @@
+<apex:page standardcontroller="Customer_Attendee__c" extensions="Ctrl_CreateMeetingInviteConLead" sidebar="false" showheader="false" TabStyle="Customer_Attendee__c">
+<apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"/>
+<apex:pageMessages id="Pgmsg"/>
+<apex:form >
+    <apex:pageBlock >   
+        <apex:pageBlockButtons >
+            <apex:commandButton value="Save" action="{!SaveandRedirect}" oncomplete="closeAndRefresh({!FoundError});" rerender="inli,Pgmsg"/>
+           <apex:commandButton value="Cancel" action="{!Cancel}"/>
+        </apex:pageBlockButtons> 
+        <div style="marging-left:33%">
+            <apex:outputText value="Record Type : " style="font-weight:bold"/>
+            <apex:selectList value="{!selectedRT}" size="1"> 
+                <apex:actionSupport event="onchange" reRender="inli"/>
+                <apex:selectOptions value="{!rectypes}"/> 
+            </apex:selectList>
+        </div><br/>
+        <apex:pageBlockSection title="Client Attendees" columns="1" id="inli">
+        <apex:actionFunction name="addmorelineitemsJS" action="{!addmorelineitems}" rerender="inli">        
+            <apex:param name="rownum" value="" assignto="{!cntofli}"/>          
+        </apex:actionFunction>
+            <apex:pageBlockTable value="{!MICList}" var="childRec" >
+                <apex:column rendered="{!IF(selectedRT = 'Contact_Related',true,false)}">
+                    <apex:facet name="header">Contact</apex:facet>
+                    <apex:inputField value="{!childRec.Contact__c}" id="MICon"/>
+                </apex:column> 
+                <apex:column rendered="{!IF(selectedRT = 'Contact_Related',false,true)}">
+                    <apex:facet name="header">Lead</apex:facet>
+                    <apex:inputField value="{!childRec.Lead__c}" id="MILead"/>
+                </apex:column> 
+                <apex:column >
+                    <apex:facet name="header">Attendee Email</apex:facet>
+                    <apex:inputField value="{!childRec.Attendee_Email__c}"/>
+                </apex:column>
+                <apex:column >
+                    <apex:facet name="header">Attendee Phone</apex:facet>
+                    <apex:inputField value="{!childRec.Attendee_Phone__c}"/>
+                </apex:column>
+            </apex:pageBlockTable>
+                                  
+        </apex:pageBlockSection>
+    </apex:pageBlock>              
+</apex:form>
+<script type="text/javascript">
+    
+    function closeAndRefresh(FoundError){
+        console.log('it is calles to close');
+      //opener.location.reload(); // or opener.location.href = opener.location.href;
+        if(FoundError==false) { 
+      window.opener.location.href="/{!$CurrentPage.parameters.MIid}";
+      window.close(); // or self.close();
+            }
+    }
+</script>
+</apex:page>

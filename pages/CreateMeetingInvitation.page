@@ -1,0 +1,60 @@
+<apex:page standardController="Invitation__c" extensions="Ctrl_CreateMeetingInvitation" standardStylesheets="true" cache="false" docType="html-5.0" title="TimeTrade Invitation" tabStyle="Invitation__c">
+    <apex:form >
+        <apex:sectionHeader title="TimeTrade Invitation " subtitle="TimeTrade Invitation Edit"/>
+        <apex:pageBlock title="TimeTrade Invitation Edit" mode="edit" id="theParentBlock">
+        <apex:pageBlockButtons >
+                <apex:commandButton action="{!Save}" value="Save" /> 
+                <apex:commandButton action="{!saveandnew}" value="Save & New"/> 
+                <apex:commandButton action="{!cancelrec}" value="Cancel" immediate="true"  html-formnovalidate="formnovalidate"/>
+            </apex:pageBlockButtons> 
+        <apex:pageMessages />       
+        <apex:pageBlockSection title="Information" columns="2" id="PageBlockSec"> 
+            <!--Pair1-->
+            <apex:inputField value="{!meetingInvitation.Name}" label="Subject" id="invitationName" type="text" required="true"/>
+            <apex:pageBlockSectionItem >
+              <apex:outputLabel value="Owner"/>
+             <apex:outputText value="{!UserName}" title="Owner"></apex:outputText>
+          </apex:pageBlockSectionItem>
+
+          <!--Pair2-->
+          <apex:pageBlockSectionItem helpText="Specifies the location text that will be populated in the meeting invite ICS.">
+          <apex:outputLabel value="Location"/>
+          <apex:inputField value="{!meetingInvitation.Location__c}" label="Location" type="text" />
+          </apex:pageBlockSectionItem>
+
+          
+
+          <!--Pair3-->
+          <apex:inputField value="{!meetingInvitation.Availability_Start__c}" label="Availability Starting" required="true" />
+          <apex:inputField value="{!meetingInvitation.Duration__c}" label="Duration"  required="true"/>
+
+          <!--Pair4-->
+          <apex:inputField value="{!meetingInvitation.Availability_End__c}" label="Availability Ending" required="true" />
+          <apex:pageBlockSectionItem helpText="Private invitations will limit scheduling to a one-time use link, only for invited clients.">
+          <apex:outputLabel value="Private Invitation"/>
+          <apex:inputField value="{!meetingInvitation.Private__c}" label="Private Meeting"  />
+          </apex:pageBlockSectionItem>
+
+        </apex:pageBlockSection>    
+        <apex:pageBlockSection title="Notifications and Conference Details" columns="1"> 
+            <apex:pageBlockSectionItem helpText="The template to use for outbound email notifications about the Invitation and scheduled meetings.">
+              <apex:outputLabel value="Email Notification Template" />
+             <apex:inputField value="{!meetingInvitation.Template__c}" label="Email Notification Template" />  
+          </apex:pageBlockSectionItem>
+
+          <apex:inputField value="{!meetingInvitation.Web_Conference__c}" label="Web Conference"/>
+
+          <apex:inputField value="{!meetingInvitation.Web_Conference_Password__c}" label="Web Conference Password"/>
+
+
+            <apex:pageBlockSectionItem helpText="Provide any relevant instructions to be shared with the customer for the meeting">
+              <apex:outputLabel value="Notes"/>
+              <apex:inputField value="{!meetingInvitation.Notes__c}" /> 
+          </apex:pageBlockSectionItem>
+
+          
+          
+        </apex:pageBlockSection> 
+        </apex:pageBlock>
+        </apex:form>
+</apex:page>
