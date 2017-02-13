@@ -1,0 +1,260 @@
+<apex:page id="clicktoschedule" showHeader="false" title="Schedule Meeting" extensions="Ctrl_ClickToSchedule" standardController="Invitation__c"  standardStylesheets="false" action="{!pageLoad}" cache="false">
+
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"/> 
+    <apex:includescript value="{!$Resource.TimeZoneJS}"/>
+    <apex:stylesheet value="{!$Resource.ctsStyleCSS}"/> 
+    <script type="text/javascript">
+        function loadingMonth(val) {
+        
+        if (val) {
+            document.getElementById('contentMonthLoading').style.display = 'block';
+        }
+        else {
+            document.getElementById('contentMonthLoading').style.display = 'none';
+        }
+    }
+    
+    function loadingBooking(val) {
+        if (val) {
+            document.getElementById('bookingProgressSection').style.display = 'block';
+        }
+        else {
+            document.getElementById('bookingProgressSection').style.display = 'none';
+        }
+    }
+    var d = new Date();
+    d.setTime(d.getTime() + (5*24*60*60*1000)); //This is to set expiration time of the cookie. Here, expiration date is set as 5 days from today
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = "debug_logs=debug_logs;domain=.force.com;" + expires;
+    </script>   
+    
+    <!-- <apex:stylesheet value="https://dl.dropboxusercontent.com/u/29195628/TimeTrade/Linkalator/ctsStyle.css"/> --> 
+    <meta name="viewport" content="user-scalable=0, width=device-width, initial-scale=1.0, maximum-scale=1.0" />    
+    
+    <apex:composition template="{!$Site.Template}">
+    
+    
+    <apex:define name="body">   
+        
+        
+        <apex:form id="mainpageform">
+            <div id="mainpage">
+                <apex:actionFunction name="CallLoadingMonth" action="{!setTimeZone}" status="loadingMonth" rerender="showTimeSection, showTitleSection, bookSection" >
+                <apex:param name="a" value="" assignTo="{!timeZoneName}"/>
+                </apex:actionFunction>
+                <div class="mainContent ">                    
+                    
+                    <apex:outputPanel layout="block"  id="showTitleSection">
+                    <div class="section titleSection">
+
+                        <h1><apex:outputText value="{!pageTitle}"/></h1>
+                        <apex:outputText value="{!ttActivity.Location__c}"/><br/>
+                        <apex:outputText value="{!apptDurationTitle}" styleClass="durationName"/>
+                        <br />
+                    </div>
+                    </apex:outputPanel>
+                    
+                    <apex:outputPanel rendered="{!showAttendeeSection}">
+                        <div class="section serviceSection">
+                            <div style="overflow: hidden;">
+                                <table style="border-spacing:0px">
+                                <tr><td style="vertical-align:top;padding:0px;"><h3>with</h3></td><td style="vertical-align:top;padding-top:0px;">
+                                    <apex:repeat id="myRepeater" value="{!attendeeList}" var="i">
+                                        <div class="floatingDiv" style="margin-bottom:0px;">
+                                            <table>
+                                                <tr><td style="height:85px;"><apex:image value="{!i.Name__r.SmallPhotoUrl}" style="border-radius:50%;"/></td>
+                                                <td>
+                                                    <b><apex:outputText value="{!i.Name__r.FirstName +' '+ i.Name__r.LastName}" style="font-size:18px;"/></b><br />
+                                                    <apex:outputText value="{!i.Name__r.Title}" style="font-size:12px;"/><br />
+                                                    <apex:outputText value="{!i.Name__r.email}"/>
+                                                    </td></tr></table>
+                                        </div>
+                                    </apex:repeat>
+                                </td></tr>
+                            </table>
+                            </div>
+                        </div>
+                    </apex:outputPanel>
+                    
+                    
+                    <apex:outputPanel layout="block" id="showTimeSection" rendered="{!showTimeSection}">
+                        <div class="section timeSection" style="position:relative">
+                            <!-- <h3>date and time</h3> -->
+                            <div id="contentMonthLoading" style="display:none;position:absolute; width:100%; left:0; top:0; height:100%; z-index:1000; background: rgba(255, 255, 255, 0.6);">
+                                <div style="text-align: center; height:500px; margin-top:120px;">
+                                    <apex:image url="{!$Resource.loadingGif}" width="50" /><br /><br />
+                                    &nbsp;&nbsp;Loading...
+                                </div>
+                            </div>
+                            <div class="picker" style="z-index:100;">
+                                
+                                <div class="datePicker" >
+                                    <div class="header" style="height:50px">
+                                       <table width="100%" style="border-spacing:0px;">
+                                            <tr><td>
+                                        <apex:outputPanel layout="block" styleClass="{!prevMonthClass}" title="Previous month" >
+                                            <apex:actionSupport action="{!prevMonth}" event="onclick" disabled="{!prevMonthClass == 'navigator disabled'}" reRender="showTimeSection, showTitleSection, bookSection" status="loadingMonth">
+                                                <span style="font-size: 36px;">&lt;</span>
+                                            </apex:actionSupport>
+                                        </apex:outputPanel>
+                                        </td><td style="text-align:center">
+                                        <apex:actionStatus id="loadingMonth" onstart="loadingMonth(true)" onstop="loadingMonth(false)" />
+                                       
+                                                <apex:outputText value="{!currentMonthTitle}" styleClass="monthName" />
+                                        </td><td style="text-align:right">
+                                        <apex:outputPanel layout="block" styleClass="{!nextMonthClass}" title="Next month">
+                                                <apex:actionSupport action="{!nextMonth}" event="onclick" disabled="{!nextMonthClass == 'navigator disabled'}" reRender="showTimeSection, showTitleSection, bookSection" status="loadingMonth" >
+                                                <span style="font-size: 36px;">&gt;</span>
+                                            </apex:actionSupport>
+                                                </apex:outputPanel></td></tr>
+                                        </table>
+                                    </div>
+                                   
+                                    <div><div class="weekday">SUN</div><div class="weekday">MON</div><div class="weekday">TUE</div><div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div></div>
+                                    <div class="focusable dates" tabindex="0" aria-label="Date picker. Select a date. Use arrow keys to navigate."> <!-- {!(j.cssClass != 'date circle bookable')} -->
+                                        <apex:actionFunction action="{!selectDay}" name="selectThisDay" rerender="showTimeSection, showTitleSection" status="loadingMonth"><apex:param name="selectedId" value="" assignTo="{!selectedDay}" /></apex:actionFunction>    
+                                        <apex:repeat id="dayRepeater" value="{!monthDays}" var="j"><div onclick="if('{!j.cssClass}' == 'date circle bookable') selectThisDay('{!j.dayNumber}');" class="{!j.cssClass}" tabindex="{!j.tabIndex}" data-value="{!j.dataValue}" title="{!j.title}" aria-label="{!j.label}"><apex:outputText value="{!j.dayNumber}"/></div></apex:repeat>
+                                    </div>
+                                  
+                                </div>
+                                <br /><br />
+                                <center>
+                                   
+                                <apex:selectList id="TimeZonepicker" value="{!strTZ}" size="1" required="true">
+                                    <apex:actionSupport event="onchange" action="{!setTZ}" reRender="showTimeSection" status="loadingMonth"/>
+                                    <apex:selectOptions value="{!TimeZoneOptions}"/>
+                                </apex:selectList>
+                                      
+                               </center>
+                            </div>
+                            
+                            
+                            <div class="picker" style="z-index:100;">
+                                <div class="header timeHeader" style="height:50px;">
+                                    <br /><h3><apex:outputText value="Select a time" rendered="{!selectedDay > 0}"/></h3>
+                                </div>
+                                <div class="focusable timePicker" tabindex="0" style="z-index:100;" role="list" aria-label="Time picker. Select from one of the available times. Use arrow keys to navigate.">
+                                    <apex:actionFunction action="{!selectTime}" name="selectThisTime" rerender="showTimeSection"><apex:param name="selectedId" value="" assignTo="{!selectedTime}" /></apex:actionFunction>    
+                                    <ul>
+                                        <apex:repeat id="timeRepeater" value="{!dayTimes}" var="j">
+                                            <li>
+                                                <input type="radio" tabindex="{!j.tabIndex}" name="selectedTimeSlot"/>
+                                                <label class="{!j.cssClass}" onclick="selectThisTime('{!j.dataValue}');" tabindex="-1"><span><apex:outputText value="{!j.label}"/></span></label>
+                                            </li>
+                                        </apex:repeat>
+                                    </ul>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </apex:outputPanel>
+                    
+                    <apex:outputPanel title="Contact Information" id="clientSection" rendered="{!showClientSection}">
+                        <div class="section customerSection">
+                            <!--<h3 tabindex="0" aria-label="Contact Information">contact information</h3> -->
+                            <div class="customerDetails"><div>
+                                <label class="formlabel">First Name</label>
+                                <apex:inputText id="txtFirstName" value="{!custFirstName}" disabled="{!formDisabled}"/>
+                                <label class="formlabel">Last Name</label>
+                                <apex:inputText id="txtLastName" value="{!custLastName}" disabled="{!formDisabled}" />
+                                <label class="formlabel">Email</label>
+                                <apex:inputText id="txtEmail" value="{!custEmail}" disabled="{!formDisabled}" />
+                                <label class="formlabel">Phone Number (optional)</label>
+                                <apex:inputText id="txtPhone" value="{!custPhone}" />
+                                </div>
+                                <div>
+                                    <span class="formlabel" style="line-height: 20px;">You may invite others from your organization. Provide their email addresses here, separated by commas.</span>
+                                    <apex:inputTextarea id="txtAttendees" value="{!custAttendeeList}" html-placeholder="ie. jsmith@tt.com, cgilmore@tt.com"/>
+                                    <br /><br />
+                                    <span class="formlabel" style="line-height: 20px;">Add any notes for the meeting participants.</span>
+                                    <apex:inputTextarea id="txtNotes" value="{!apptNotes}" html-placeholder="Notes (optional)"/>
+                                </div>
+                            </div>
+                        </div>
+                    </apex:outputPanel>
+                    
+                    
+                    
+                    <div class="section bookSection" style="border-bottom:none;text-align:right;padding-right:40px;">
+                     <apex:outputPanel layout="block" id="bookSection" style="padding-bottom:40px;">
+                        
+                         <apex:outputPanel layout="block" styleClass="bookButton" style="height:50px;line-height:50px;" title="Schedule Meeting" rendered="{!rescheduleEvent == null}">
+                            <apex:actionSupport action="{!bookAppointment}" event="onclick" reRender="bookSection" status="loadingBooking">
+                                Schedule Meeting
+                            </apex:actionSupport>
+                        </apex:outputPanel>
+                         
+                         <apex:outputPanel layout="block" styleClass="bookButton" style="height:50px;line-height:50px;" title="Reschedule Meeting" rendered="{!rescheduleEvent != null}">
+                            <apex:actionSupport action="{!rescheduleAppointment}" event="onclick" reRender="bookSection" status="loadingBooking">
+                                Reschedule Meeting
+                            </apex:actionSupport>
+                        </apex:outputPanel>
+                         
+                         
+                        <center>
+                            <apex:outputPanel layout="block" id="ErrorSection" rendered="{!showErrorSection}">
+                                <div class="dialog" tabindex="-1" style="z-index:10000;">
+                                    <div class="overlay"></div>
+                                    <div class="container">
+                                        <div class="focusable content" role="dialog" tabindex="0">
+                                            <div><h3><apex:outputText value="{!errorTitle}"/></h3><small><apex:outputText value="{!errorSubTitle}"/></small></div>
+                                            <div style="background-color:#d50208; color:#FFF; font-size: 40px; width:40px; height:40px; line-height:40px; border-radius:50%;">!</div>
+                                            <div class="description left"><apex:outputText value="{!errorDescription}"/></div>
+                                        </div>
+                                        
+                                        
+                                        <apex:outputPanel id="hardErrorSection" rendered="{!!hardError}">
+                                            <apex:actionSupport action="{!hideError}" event="onclick" reRender="bookSection">
+                                                <div class="buttons"><span class="bookButton" style="height:50px;line-height:50px;">Close</span></div>
+                                            </apex:actionSupport>
+                                            
+                                          
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                            </apex:outputPanel>
+                            <div class="dialog" id="bookingProgressSection" tabindex="-1" style="display:none;z-index:10000;">
+                                    <div class="overlay"></div>
+                                    <div class="container">
+                                        <div class="focusable content" role="dialog" tabindex="0">
+                                            <apex:image url="{!$Resource.loadingGif}" width="50"/><br /><br />
+                                            <h3>Scheduling Meeting...</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <apex:actionStatus id="loadingBooking" onstart="loadingBooking(true)" onstop="loadingBooking(false)" />
+                                
+                        </center>
+                         
+                    </apex:outputPanel>
+                       </div>
+                    
+                    
+                    
+                    
+                    <br/>
+                    
+                     
+                    
+                </div>
+            </div>
+            <script>
+            jQuery(document).ready(function() { 
+                //set timezone
+                //passTZToController(Intl.DateTimeFormat().resolvedOptions().timeZone);
+                var str = '';
+                str=jstz.determine().name();
+
+                var jshardError='{!hardError}';
+                if (jshardError == 'false')
+                {
+                    CallLoadingMonth(str);
+                }
+                
+                
+            });
+            </script>
+        </apex:form>  
+    </apex:define>
+    </apex:composition>
+</apex:page>

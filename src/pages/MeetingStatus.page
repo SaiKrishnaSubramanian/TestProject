@@ -1,0 +1,165 @@
+<apex:page id="MeetingStatus" showHeader="false" title="Manage Meeting" standardController="Event" extensions="Ctrl_MeetingStatus" standardStylesheets="false" action="{!pageload}"  cache="false">
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"/> 
+    <apex:includescript value="{!$Resource.TimeZoneJS}"/>
+    <apex:stylesheet value="{!$Resource.ctsStyleCSS}"/>
+    
+    <!-- <apex:stylesheet value="https://dl.dropboxusercontent.com/u/29195628/TimeTrade/Linkalator/ctsStyle.css"/> -->
+    <meta name="viewport" content="user-scalable=0, width=device-width, initial-scale=1.0, maximum-scale=1.0" /> 
+    
+    <apex:composition template="{!$Site.Template}" rendered="false">
+    <apex:define name="body">  
+        
+        <apex:form id="mainpageform" >
+             
+            <center>
+                
+                <apex:outputPanel layout="block" id="ErrorSection" rendered="{!showErrorSection}">
+                    
+                    <div class="dialog" tabindex="-1">
+                        <div class="overlay"></div>
+                        <div class="container">
+                            
+                            <div class="focusable content" role="dialog" tabindex="0">
+                                <div><h3><apex:outputText value="{!errorTitle}"/></h3><small><apex:outputText value="{!errorSubTitle}"/></small></div>
+                                <div style="background-color:#d50208; color:#FFF; font-size: 40px; width:40px; height:40px; line-height:40px; border-radius:50%;">!</div>
+                                <div class="description left"><apex:outputText value="{!errorDescription}"/></div>
+                            </div>
+                            
+                            
+                            <apex:outputPanel rendered="{!!hardError}">
+                                <apex:actionSupport action="{!hideError}" event="onclick" reRender="mainpageform">
+                                    <div class="buttons"><span class="bookButton" style="height:50px;line-height:50px;">Close</span></div>
+                                </apex:actionSupport>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                
+                <div id="mainContainer">
+                    <div data-reactroot="" class="mainContent">
+                        
+                        <div class="focusable mainForm" tabindex="0">
+                            
+                                <div id="appointmentSummary" class="section serviceSection" style="overflow: hidden;">
+                                    <div class="floatingDiv" style="margin-bottom: 0px;max-width: 50%;">
+                                        <h1><apex:outputText value="{!pageTitle}"/></h1>
+                                        <b><apex:outputText value="{!apptDate}"/></b><br />
+                                        <apex:outputText value="{!ttEvent.Location}"/><br /><br/>
+
+                                        
+                                    </div>
+                                    <div class="floatingDiv statusDiv">
+                                        <label class="formlabel">Status</label><br />
+                                        <apex:outputText value="{!apptStatus}" rendered="{!IF(apptStatus!='Canceled',true,false)}"/>
+                                        <apex:outputText value="This meeting has been {!apptStatus}" rendered="{!IF(apptStatus=='Canceled',true,false)}"/>
+                                    </div>
+                                    <div class="floatingDiv statusDiv" style="margin-bottom: 0px">
+                                    <apex:outputPanel layout="block" rendered="{!showActions}">
+                                    <apex:actionSupport id="btnReschedule" action="{!rescheduleAppointment}" event="onclick" reRender="mainpageform">
+                                            <span class="bookButton" style="height:45px;margin-top: 0px;margin-bottom: 4px;line-height:45px;">Reschedule Meeting</span>
+                                        </apex:actionSupport>
+                                    </apex:outputPanel>
+                                    </div>
+                                    <div class="floatingDiv statusDiv" style="margin-bottom: 0px">
+                                             <apex:outputPanel layout="block" rendered="{!showActions}">
+                                        <apex:actionSupport id="btnCancel" action="{!cancelAppointment}" event="onclick" reRender="mainpageform">
+                                            <span class="bookButton" style="height:45px;margin-top: 0px;margin-bottom: 4px;line-height:45px;">Cancel Meeting</span>
+                                        </apex:actionSupport>
+                                        </apex:outputPanel>
+                                    
+                                    </div>
+                                    
+                                    
+                                    
+                            </div>
+                            <div class="section resourceSection">
+                                <div style="overflow: hidden;">
+                                    <label class="formlabel">Attendees</label><br />
+                                    <apex:repeat id="internalRepeater" value="{!internalAttendeeList}" var="i">
+                                        <div class="floatingDiv" style="margin-bottom:0px;">
+                                            <table>
+                                                <tr><td style="height:85px;"><apex:image value="{!i.SmallPhotoUrl}" style="border-radius:50%;"/></td>
+                                                <td>
+                                                    <b><apex:outputText value="{!i.FirstName +' '+ i.LastName}" style="font-size:18px;"/></b><br />
+                                                    <apex:outputText value="{!i.Title}" style="font-size:12px;"/><br />
+                                                    <apex:outputText value="{!i.email}"/>
+                                                    </td></tr></table>
+                                        </div>
+                                    </apex:repeat>
+                                    <apex:repeat id="externalConRepeater" value="{!contactAttendeeList}" var="i">
+                                        <div class="floatingDiv" style="margin-bottom:0px;">
+                                            <table>
+                                                <tr><td style="height:85px;"><apex:image value="{!$Resource.UserImage}" style="border-radius:50%;"/></td>
+                                                <td>
+                                                    <b><apex:outputText value="{!i.FirstName +' '+ i.LastName}" style="font-size:18px;"/></b><br />
+                                                    <apex:outputText value="{!i.Title}" style="font-size:12px;"/><br />
+                                                    <apex:outputText value="{!i.email}"/>
+                                                    </td></tr></table>
+                                        </div>
+                                    </apex:repeat>
+                                    
+                                    <apex:repeat id="externalLeadRepeater" value="{!leadAttendeeList}" var="i">
+                                        <div class="floatingDiv" style="margin-bottom:0px;">
+                                            <table>
+                                                <tr><td style="height:85px;"><apex:image value="{!$Resource.UserImage}" style="border-radius:50%;"/></td>
+                                                <td>
+                                                    <b><apex:outputText value="{!i.FirstName +' '+ i.LastName}" style="font-size:18px;"/></b><br />
+                                                    <apex:outputText value="{!i.Title}" style="font-size:12px;"/><br />
+                                                    <apex:outputText value="{!i.email}"/>
+                                                    </td></tr></table>
+                                        </div>
+                                    </apex:repeat>
+                                </div>
+                            </div>                            
+                            <apex:outputPanel rendered="{!AND(ttEvent.Conference_Provider__c!=null, ttEvent.Conference_Number__c==null,apptStatus!='Canceled',pollerEnable )}">
+                            
+                                <div style="text-align: center; height:100px; margin-top:50px;">
+                                    <apex:image url="{!$Resource.loadingGif}" width="50" /><br /><br />
+                                    &nbsp;&nbsp; Web Conference Information Loading...
+                                </div>   
+                               
+                            </apex:outputPanel> 
+                                <div class="section serviceSection">
+                                    
+
+                                    <apex:outputPanel id="webConfId" layout="block" rendered="{!ttEvent.Conference_Number__c != ''}">
+                                        <br />
+                                        <label class="formlabel">Conference Instructions</label><br />
+                                        <apex:outputText value="Click the link below to join the conference at the specified date and time:"/><br />
+                                        <a href="{!ttEvent.Conference_Link__c}" target="_blank" style="text-decoration: underline;"><apex:outputText value="{!ttEvent.Conference_Link__c}"/></a><br />
+                                        <br />
+                                        <label class="formlabel">Dial-in Info</label><br />
+                                        Call +1 <apex:outputText value="{!ttEvent.Conference_Callin__c}"/> USA/Canada <a target="_blank" href="{!ttEvent.Conference_Global_Callin__c}" style="font-size: 11px;">(click for additional #s)</a> <br />
+                                        <br />
+                                        <label class="formlabel">Meeting Number</label><br /><apex:outputText value="{!ttEvent.Conference_Number__c}"/> <br />
+                                        <br />
+                                        <label class="formlabel">Password</label><br /><apex:outputText value="{!ttEvent.Conference_Secret__c}"/> <br />
+                                    </apex:outputPanel> 
+
+                                    <apex:outputPanel layout="block" rendered="{!ttActivity.Notes__c != ''}">
+                                        <br />
+                                        <label class="formlabel">Organizer Notes</label><br />
+                                       <apex:outputText value="{!ttActivity.Notes__c}" escape="false"/><br />
+                                    </apex:outputPanel>
+                                    <br /><br />
+
+                                    <label class="formlabel">Client Notes</label><br />
+                                    <apex:outputText value="{!apptNotes}"/>
+                            </div>
+                            
+                            <apex:actionPoller action="{!showWebConfDetails}" interval="5" rerender="mainpageform" rendered="{!AND(ttEvent.Conference_Provider__c!=null, ttEvent.Conference_Number__c==null,apptStatus!='Canceled', pollerEnable )}"/>   
+                              
+                                
+                            
+                        </div>
+                        
+                    </div>
+                </div>
+            </center>
+           
+            
+        </apex:form>
+    </apex:define>
+     </apex:composition>
+     
+</apex:page>

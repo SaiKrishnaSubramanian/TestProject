@@ -1,0 +1,16 @@
+{
+    "projectName": "TimeTrade Packaging",
+    "username": "vangappan@catpackaging2.com",
+    "id": "46ae3330-f1cd-11e6-be5e-e966455cfd10",
+    "namespace": "TimeTrade_SF1",
+    "environment": "developer",
+    "loginUrl": "https://login.salesforce.com/",
+    "workspace": "C:\\Users\\saikrishna.s\\Desktop\\TimeTrade Packaging",
+    "subscription": [
+        "ApexClass",
+        "ApexComponent",
+        "ApexPage",
+        "ApexTrigger",
+        "StaticResource"
+    ]
+}
